@@ -18,7 +18,7 @@
          input ""]
     (let [parsed-input (edn/read-string input)
           new-game (or (game/play game parsed-input) game)
-          new-game (or (game/deal new-game) new-game)]
+          new-game (cond-> new-game (game/room-cleared? new-game) game/deal)]
       (cond
         (#{"exit"} (str/lower-case input))
         (println "stopping game..")

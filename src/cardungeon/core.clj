@@ -8,12 +8,15 @@
      (map (partial assoc {} :card/potion) (range 2 11)))))
 
 (defn- fight
-  "Returns the dungeon with monster's strength subtracted from player's health"
+  "Returns the dungeon with monster's strength subtracted from player's health."
   [dungeon {:card/keys [monster]}]
   {:pre [(number? monster)]}
   (update dungeon :player/health - monster))
 
-(defn- heal [{:room/keys [already-healed?] :as dungeon} {:card/keys [potion]}]
+(defn- heal
+  "Returns the dungeon with the potion's value added to player's health, if not
+  already healed in the current room."
+  [{:room/keys [already-healed?] :as dungeon} {:card/keys [potion]}]
   {:pre [(number? potion)]}
   (cond-> dungeon
     (not already-healed?) (update :player/health + potion)
@@ -35,26 +38,34 @@
           (play* card)
           (update :dungeon/discarded conj card)))))
 
-(defn- reshuffle [{:dungeon/keys [discarded] :as dungeon}]
+(defn- reshuffle
+  "Returns the game with discarded cards shuffled into the draw pile."
+  [{:dungeon/keys [discarded] :as dungeon}]
   (-> dungeon
       (dissoc :dungeon/discarded)
       (update :dungeon/draw-pile concat (shuffle discarded))))
 
-(defn- merge-room [room cards]
+(defn- merge-room
+  "Returns the game with cards merged into the room, using free indices."
+  [room cards]
   (let [free-indices (remove (partial contains? room) (range))]
     (merge room (zipmap free-indices cards))))
 
-(defn deal [{:dungeon/keys [draw-pile room] :as dungeon}]
-  (when (#{0 1} (count room))
-    (let [n-cards (- 4 (count room))
-          drawn (take n-cards draw-pile)]
-      (-> dungeon
-          (update :dungeon/draw-pile (partial drop n-cards))
-          (update :dungeon/room merge-room drawn)
-          (dissoc :room/already-healed?)))))
+(defn room-cleared? [{:dungeon/keys [room]}]
+  (#{0 1} (count room)))
+
+(defn deal
+  "Returns the game with up to 4 cards dealt from draw pile into the room."
+  [{:dungeon/keys [draw-pile room] :as dungeon}]
+  (let [n-cards (- 4 (count room))
+        drawn (take n-cards draw-pile)]
+    (-> dungeon
+        (update :dungeon/draw-pile (partial drop n-cards))
+        (update :dungeon/room merge-room drawn)
+        (dissoc :room/already-healed?))))
 
 (defn new-game []
-  (some-> {:player/health 20 :dungeon/discarded BASE_DECK}
+  (-> {:player/health 20 :dungeon/discarded BASE_DECK}
       reshuffle
       deal))
 
