@@ -11,7 +11,8 @@
   (loop [game {:player/health 13
                :dungeon/room
                {0 {:card/monster 2}
-                1 {:card/monster 3}}}
+                1 {:card/monster 3}
+                2 {:card/potion 4}}}
          input ""]
     (let [parsed-input (edn/read-string input)
           new-game (some-> game (game/play parsed-input))]
@@ -20,7 +21,9 @@
         (println "stopping game..")
 
         (game/finished? new-game)
-        (println "You cleared the dungeon!")
+        (do
+          (println new-game)
+          (println "You cleared the dungeon!"))
 
         :else
         (recur (doto (or new-game game) println) (read-line))))))
