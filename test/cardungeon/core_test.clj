@@ -12,3 +12,26 @@
         {:player/health -1} {:card/monster 14}))
     (testing "asserts if supplied card is a monster"
         (is (thrown? AssertionError (sut/fight {} {:card/potion 3}))))))
+
+(deftest play-test
+  (testing "play"
+    (let [game (-> {:player/health 13
+                    :dungeon/room {0 {:card/monster 2}
+                                   1 {:card/monster 3}}}
+                   (sut/play 0))]
+      (testing "returns the game with the room card removed"
+        (is (= {1 {:card/monster 3}}
+               (:dungeon/room game))))
+      (testing "returns the game with the room card moved to discarded coll"
+        (is (= [{:card/monster 2}]
+               (:dungeon/discarded game)))))
+    (testing "returns nil if the room card isn't there"
+      (is (nil? (sut/play {:dungeon/room {0 :card}} 10))))))
+
+(deftest finished?-test
+  (testing "finished?"
+    (are [predicate dungeon] (predicate (sut/finished? dungeon))
+      true? {:dungeon/room {} :dungeon/draw-pile []}
+      false? {:dungeon/room {0 :card} :dungeon/draw-pile []}
+      false? {:dungeon/room {} :dungeon/draw-pile [:card]}
+      false? nil)))
