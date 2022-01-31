@@ -13,9 +13,11 @@
   {:pre [(number? monster)]}
   (update dungeon :player/health - monster))
 
-(defn- heal [dungeon {:card/keys [potion]}]
+(defn- heal [{:room/keys [already-healed?] :as dungeon} {:card/keys [potion]}]
   {:pre [(number? potion)]}
-  (update dungeon :player/health + potion))
+  (cond-> dungeon
+    (not already-healed?) (update :player/health + potion)
+    (not already-healed?) (assoc :room/already-healed? true)))
 
 (defn- play-fn [{:card/keys [monster potion]}]
   (cond
@@ -48,7 +50,8 @@
           drawn (take n-cards draw-pile)]
       (-> dungeon
           (update :dungeon/draw-pile (partial drop n-cards))
-          (update :dungeon/room merge-room drawn)))))
+          (update :dungeon/room merge-room drawn)
+          (dissoc :room/already-healed?)))))
 
 (defn new-game []
   (some-> {:player/health 20 :dungeon/discarded BASE_DECK}

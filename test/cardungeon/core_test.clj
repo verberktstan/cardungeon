@@ -18,8 +18,11 @@
   (testing "heal"
     (testing "increases the player's health by potion strength"
       (are [dungeon potion] (= dungeon (#'sut/heal {:player/health 8} potion))
-        {:player/health 13} {:card/potion 5}
-        {:player/health 16} {:card/potion 8}))
+        {:player/health 13 :room/already-healed? true} {:card/potion 5}
+        {:player/health 16 :room/already-healed? true} {:card/potion 8}))
+    (testing "doesn't work if already-healed in this room"
+      (is (= {:player/health 13 :room/already-healed? true}
+             (#'sut/heal {:player/health 13 :room/already-healed? true} {:card/potion 3}))))
     (testing "asserts if supplied card is a potion"
       (is (thrown? AssertionError (#'sut/heal {} {:card/monster 3}))))))
 
