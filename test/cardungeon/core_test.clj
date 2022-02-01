@@ -48,3 +48,12 @@
       false? {:dungeon/room {0 :card} :dungeon/draw-pile []}
       false? {:dungeon/room {} :dungeon/draw-pile [:card]}
       false? nil)))
+
+(deftest skip-test
+  (testing "skip"
+    (testing "returns nil if this room cannot be skipped"
+      (is (nil? (sut/skip {:room/cannot-skip? true}))))
+    (testing "places current room's cards back into the draw pile"
+      (let [dungeon (sut/skip {:dungeon/room {0 :a 1 :b}})]
+        (is (nil? (:dungeon/room dungeon)))
+        (is (= #{:a :b} (-> dungeon :dungeon/draw-pile set)))))))

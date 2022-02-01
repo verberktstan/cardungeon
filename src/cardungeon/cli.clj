@@ -17,14 +17,23 @@
   (newline)
   (println "Welcome to Cardungeon!")
   (println "type 'exit' to stop the game.")
+  (println "type 'skip' to skip the current room.")
   (println "To play, enter the number of the dungeon room card to play it.")
   (loop [game (game/new-game)
          input ""]
-    (let [parsed-input (edn/read-string input)
-          new-game (or (game/play game parsed-input) game)
+    (let [exit? (#{"exit"} (str/lower-case input))
+          skip? (#{"skip"} (str/lower-case input))
+          parsed-input (edn/read-string input)
+          skipped-game (and skip? (game/skip game))
+          played-game (game/play game parsed-input)
+          new-game (or skipped-game played-game game)
           new-game (cond-> new-game (game/room-cleared? new-game) game/deal)]
+      (when (and skip? (not skipped-game))
+        (println "Cannot skip this room!"))
+      (when skipped-game
+        (println "Skipping this room.."))
       (cond
-        (#{"exit"} (str/lower-case input))
+        exit?
         (println "stopping game..")
 
         (game/finished? new-game)

@@ -62,10 +62,11 @@
     (-> dungeon
         (update :dungeon/draw-pile (partial drop n-cards))
         (update :dungeon/room merge-room drawn)
-        (dissoc :room/already-healed?))))
+        (dissoc :room/already-healed?)
+        (update :room/cannot-skip? dec))))
 
 (defn new-game []
-  (-> {:player/health 20 :dungeon/discarded BASE_DECK}
+  (-> {:player/health 20 :dungeon/discarded BASE_DECK :room/cannot-skip? 1}
       reshuffle
       deal))
 
@@ -73,3 +74,13 @@
   "Returns true when the dungeon's room and draw-pile are both empty."
   [{:dungeon/keys [room draw-pile] :as dungeon}]
   (boolean (and dungeon (empty? room) (empty? draw-pile))))
+
+(defn skip
+  "Returns the dungeon with the current room returnd to the back of the draw
+  pile. Returns nil when impossible to skip."
+  [{:room/keys [cannot-skip?] :dungeon/keys [room] :as dungeon}]
+  (when (< cannot-skip? 1)
+    (-> dungeon
+        (dissoc :dungeon/room)
+        (update :dungeon/draw-pile concat (-> room vals shuffle))
+        (assoc :room/cannot-skip? 2))))
