@@ -3,11 +3,15 @@
             [clojure.edn :as edn]
             [clojure.string :as str]))
 
-(defn- print-dungeon [dungeon]
-  (-> dungeon
-      (update :dungeon/discarded count)
-      (update :dungeon/draw-pile count)
-      println))
+(defn- print-dungeon [{:player/keys [health]
+                       :dungeon/keys [room]}]
+  (newline)
+  (println "Health:" health)
+  (doseq [[i {:card/keys [monster potion]}] (sort-by key room)]
+    (println i
+     (cond
+       monster (str "Monster(" monster ")")
+       potion (str "Potion(" potion ")")))))
 
 (defn -main [& _]
   (newline)
