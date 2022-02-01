@@ -1,15 +1,16 @@
 (ns cardungeon.core-test
   (:require [clojure.test :refer [are deftest is testing]]
-            [cardungeon.core :as sut]))
+            [cardungeon.core :as sut]
+            [cardungeon.player :as player]))
 
 ;; Basic fighting interaction with monster cards
 (deftest fight-test
   (testing "fight"
     (testing "reduces player's health by monster strength"
-      (are [dungeon monster] (= dungeon (#'sut/fight {:player/health 13} monster))
-        {:player/health 10} {:card/monster 3}
-        {:player/health 13} {:card/monster 0}
-        {:player/health -1} {:card/monster 14}))
+      (are [dungeon monster] (= dungeon (#'sut/fight {::player/health 13} monster))
+        {::player/health 10} {:card/monster 3}
+        {::player/health 13} {:card/monster 0}
+        {::player/health -1} {:card/monster 14}))
     (testing "asserts if supplied card is a monster"
         (is (thrown? AssertionError (#'sut/fight {} {:card/potion 3}))))))
 
@@ -17,18 +18,18 @@
 (deftest heal-test
   (testing "heal"
     (testing "increases the player's health by potion strength"
-      (are [dungeon potion] (= dungeon (#'sut/heal {:player/health 8} potion))
-        {:player/health 13 :room/already-healed? true} {:card/potion 5}
-        {:player/health 16 :room/already-healed? true} {:card/potion 8}))
+      (are [dungeon potion] (= dungeon (#'sut/heal {::player/health 8} potion))
+        {::player/health 13 :room/already-healed? true} {:card/potion 5}
+        {::player/health 16 :room/already-healed? true} {:card/potion 8}))
     (testing "doesn't work if already-healed in this room"
-      (is (= {:player/health 13 :room/already-healed? true}
-             (#'sut/heal {:player/health 13 :room/already-healed? true} {:card/potion 3}))))
+      (is (= {::player/health 13 :room/already-healed? true}
+             (#'sut/heal {::player/health 13 :room/already-healed? true} {:card/potion 3}))))
     (testing "asserts if supplied card is a potion"
       (is (thrown? AssertionError (#'sut/heal {} {:card/monster 3}))))))
 
 (deftest play-test
   (testing "play"
-    (let [game (-> {:player/health 13
+    (let [game (-> {::player/health 13
                     :dungeon/room {0 {:card/monster 2}
                                    1 {:card/monster 3}}}
                    (sut/play 0))]

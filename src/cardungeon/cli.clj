@@ -1,9 +1,10 @@
 (ns cardungeon.cli
   (:require [cardungeon.core :as game]
+            [cardungeon.player :as player]
             [clojure.edn :as edn]
             [clojure.string :as str]))
 
-(defn- print-dungeon [{:player/keys [health]
+(defn- print-dungeon [{::player/keys [health]
                        :dungeon/keys [room]}]
   (newline)
   (println "Health:" health)
@@ -29,7 +30,7 @@
           new-game (or skipped-game played-game game)
           room-cleared? (game/room-cleared? new-game)
           new-game (cond-> new-game room-cleared? game/deal)
-          dead? (game/dead? new-game)]
+          dead? (player/dead? new-game)]
       (when (and skip? (not skipped-game))
         (println "Cannot skip this room!"))
       (when skipped-game

@@ -1,4 +1,5 @@
-(ns cardungeon.core)
+(ns cardungeon.core
+  (:require [cardungeon.player :as player]))
 
 (def BASE_DECK
   (let [monster-range (map #(if (<= % 10) % 10) (range 2 15))]
@@ -11,7 +12,7 @@
   "Returns the dungeon with monster's strength subtracted from player's health."
   [dungeon {:card/keys [monster]}]
   {:pre [(number? monster)]}
-  (update dungeon :player/health - monster))
+  (player/update-health dungeon - monster))
 
 (defn- heal
   "Returns the dungeon with the potion's value added to player's health, if not
@@ -19,7 +20,7 @@
   [{:room/keys [already-healed?] :as dungeon} {:card/keys [potion]}]
   {:pre [(number? potion)]}
   (cond-> dungeon
-    (not already-healed?) (update :player/health + potion)
+    (not already-healed?) (player/update-health + potion)
     (not already-healed?) (assoc :room/already-healed? true)))
 
 (defn- play-fn [{:card/keys [monster potion]}]
@@ -66,7 +67,7 @@
         (update :room/cannot-skip? dec))))
 
 (defn new-game []
-  (-> {:player/health 20 :dungeon/discarded BASE_DECK :room/cannot-skip? 1}
+  (-> (assoc player/BASE :dungeon/discarded BASE_DECK :room/cannot-skip? 1)
       reshuffle
       deal))
 
@@ -84,6 +85,3 @@
         (dissoc :dungeon/room)
         (update :dungeon/draw-pile concat (-> room vals shuffle))
         (assoc :room/cannot-skip? 2))))
-
-(defn dead? [{:player/keys [health]}]
-  (< health 1))
