@@ -1,6 +1,7 @@
 (ns cardungeon.cli
   (:require [cardungeon.dungeon :as dungeon]
             [cardungeon.player :as player]
+            [cardungeon.card :as card]
             [clojure.edn :as edn]
             [clojure.string :as str]))
 
@@ -8,11 +9,8 @@
                        ::dungeon/keys [room]}]
   (newline)
   (println "Health:" health)
-  (doseq [[i {:card/keys [monster potion]}] (sort-by key room)]
-    (println i
-     (cond
-       monster (str "Monster(" monster ")")
-       potion (str "Potion(" potion ")")))))
+  (doseq [[i card] (sort-by key room)]
+    (println i ":" (card/->str card))))
 
 (defn -main [& _]
   (newline)

@@ -1,32 +1,32 @@
 (ns cardungeon.dungeon
   (:require [cardungeon.player :as player]
-            [cardungeon.room :as room]))
+            [cardungeon.room :as room]
+            [cardungeon.card :as card]))
 
 (def BASE_DECK
   (let [monster-range (map #(if (<= % 10) % 10) (range 2 15))]
     (concat
-     (map (partial assoc {} :card/monster) monster-range)
-     (map (partial assoc {} :card/monster) monster-range)
-     (map (partial assoc {} :card/potion) (range 2 11)))))
+     (map (card/make :monster) monster-range)
+     (map (card/make :potion) (range 2 11)))))
 
 (def BASE {::discarded BASE_DECK})
 
 (defn- fight
   "Returns the dungeon with monster's strength subtracted from player's health."
-  [dungeon {:card/keys [monster]}]
+  [dungeon {::card/keys [monster]}]
   {:pre [(number? monster)]}
   (player/update-health dungeon - monster))
 
 (defn- heal
   "Returns the dungeon with the potion's value added to player's health, if not
   already healed in the current room."
-  [{::room/keys [already-healed?] :as dungeon} {:card/keys [potion]}]
+  [{::room/keys [already-healed?] :as dungeon} {::card/keys [potion]}]
   {:pre [(number? potion)]}
   (cond-> dungeon
     (not already-healed?) (player/update-health + potion)
     (not already-healed?) room/mark-already-healed))
 
-(defn- play-fn [{:card/keys [monster potion]}]
+(defn- play-fn [{::card/keys [monster potion]}]
   (cond
     monster fight
     potion heal))
