@@ -1,7 +1,8 @@
 (ns cardungeon.core-test
   (:require [clojure.test :refer [are deftest is testing]]
             [cardungeon.core :as sut]
-            [cardungeon.player :as player]))
+            [cardungeon.player :as player]
+            [cardungeon.room :as room]))
 
 ;; Basic fighting interaction with monster cards
 (deftest fight-test
@@ -19,11 +20,13 @@
   (testing "heal"
     (testing "increases the player's health by potion strength"
       (are [dungeon potion] (= dungeon (#'sut/heal {::player/health 8} potion))
-        {::player/health 13 :room/already-healed? true} {:card/potion 5}
-        {::player/health 16 :room/already-healed? true} {:card/potion 8}))
+        (room/mark-already-healed {::player/health 13}) {:card/potion 5}
+        (room/mark-already-healed {::player/health 16}) {:card/potion 8}))
     (testing "doesn't work if already-healed in this room"
-      (is (= {::player/health 13 :room/already-healed? true}
-             (#'sut/heal {::player/health 13 :room/already-healed? true} {:card/potion 3}))))
+      (is (= (room/mark-already-healed {})
+             (#'sut/heal
+              (room/mark-already-healed {})
+              {:card/potion 3}))))
     (testing "asserts if supplied card is a potion"
       (is (thrown? AssertionError (#'sut/heal {} {:card/monster 3}))))))
 
@@ -53,7 +56,7 @@
 (deftest skip-test
   (testing "skip"
     (testing "returns nil if this room cannot be skipped"
-      (is (nil? (sut/skip {:room/cannot-skip? 1}))))
+      (is (nil? (sut/skip (room/mark-cannot-skip {})))))
     (testing "places current room's cards back into the draw pile"
       (let [dungeon (sut/skip {:dungeon/room {0 :a 1 :b}})]
         (is (nil? (:dungeon/room dungeon)))
