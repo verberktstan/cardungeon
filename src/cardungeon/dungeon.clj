@@ -1,4 +1,4 @@
-(ns cardungeon.core
+(ns cardungeon.dungeon
   (:require [cardungeon.player :as player]
             [cardungeon.room :as room]))
 
@@ -8,6 +8,8 @@
      (map (partial assoc {} :card/monster) monster-range)
      (map (partial assoc {} :card/monster) monster-range)
      (map (partial assoc {} :card/potion) (range 2 11)))))
+
+(def BASE {::discarded BASE_DECK})
 
 (defn- fight
   "Returns the dungeon with monster's strength subtracted from player's health."
@@ -32,51 +34,49 @@
 (defn play
   "Returns the game with dungeon-room card moved to dungeon-discarded, playing
   the room card on the fly"
-  [{:dungeon/keys [room] :as dungeon} room-idx]
+  [{::keys [room] :as dungeon} room-idx]
   (when-let [card (get room room-idx)]
     (let [play* (play-fn card)]
       (-> dungeon
-          (update :dungeon/room dissoc room-idx)
+          (update ::room room/remove-card room-idx)
           (play* card)
-          (update :dungeon/discarded conj card)))))
+          (update ::discarded conj card)))))
 
 (defn- reshuffle
   "Returns the game with discarded cards shuffled into the draw pile."
-  [{:dungeon/keys [discarded] :as dungeon}]
+  [{::keys [discarded] :as dungeon}]
   (-> dungeon
-      (dissoc :dungeon/discarded)
-      (update :dungeon/draw-pile concat (shuffle discarded))))
+      (dissoc ::discarded)
+      (update ::draw-pile concat (shuffle discarded))))
 
-(defn room-cleared? [{:dungeon/keys [room]}]
-  (#{0 1} (count room)))
+(defn room-cleared? [{::keys [room]}]
+  (room/cleared? room))
 
 (defn deal
   "Returns the game with up to 4 cards dealt from draw pile into the room."
-  [{:dungeon/keys [draw-pile room] :as dungeon}]
+  [{::keys [draw-pile room] :as dungeon}]
   (let [n-cards (- 4 (count room))
         drawn (take n-cards draw-pile)]
     (-> dungeon
-        (update :dungeon/draw-pile (partial drop n-cards))
-        (update :dungeon/room room/merge drawn)
+        (update ::draw-pile (partial drop n-cards))
+        (update ::room room/merge drawn)
         room/unmark-already-healed
         room/dec-cannot-skip)))
 
 (defn new-game []
-  (-> (merge player/BASE room/BASE {:dungeon/discarded BASE_DECK})
-      reshuffle
-      deal))
+  (-> BASE (merge player/BASE room/BASE) reshuffle deal))
 
 (defn finished?
   "Returns true when the dungeon's room and draw-pile are both empty."
-  [{:dungeon/keys [room draw-pile] :as dungeon}]
+  [{::keys [room draw-pile] :as dungeon}]
   (boolean (and dungeon (empty? room) (empty? draw-pile))))
 
-(defn skip
+(defn skip-room
   "Returns the dungeon with the current room returnd to the back of the draw
   pile. Returns nil when impossible to skip."
-  [{:dungeon/keys [room] :as dungeon}]
+  [{::keys [room] :as dungeon}]
   (when (room/can-skip? dungeon)
     (-> dungeon
-        (dissoc :dungeon/room)
-        (update :dungeon/draw-pile concat (-> room vals shuffle))
+        (dissoc ::room)
+        (update ::draw-pile concat (-> room vals shuffle))
         room/mark-cannot-skip)))

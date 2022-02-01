@@ -18,6 +18,12 @@
 (defn can-skip? [{::keys [cannot-skip?]}]
   (or (not cannot-skip?) (< cannot-skip? 1)))
 
+(defn remove-card [room idx]
+  (dissoc room idx))
+
+(defn cleared? [room]
+  (-> room count #{0 1} boolean))
+
 (defn merge
   "Returns the game with cards merged into the room, using free indices."
   [room cards]

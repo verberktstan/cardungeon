@@ -1,6 +1,6 @@
-(ns cardungeon.core-test
+(ns cardungeon.dungeon-test
   (:require [clojure.test :refer [are deftest is testing]]
-            [cardungeon.core :as sut]
+            [cardungeon.dungeon :as sut]
             [cardungeon.player :as player]
             [cardungeon.room :as room]))
 
@@ -33,31 +33,31 @@
 (deftest play-test
   (testing "play"
     (let [game (-> {::player/health 13
-                    :dungeon/room {0 {:card/monster 2}
-                                   1 {:card/monster 3}}}
+                    ::sut/room {0 {:card/monster 2}
+                                1 {:card/monster 3}}}
                    (sut/play 0))]
       (testing "returns the game with the room card removed"
         (is (= {1 {:card/monster 3}}
-               (:dungeon/room game))))
+               (::sut/room game))))
       (testing "returns the game with the room card moved to discarded coll"
         (is (= [{:card/monster 2}]
-               (:dungeon/discarded game)))))
+               (::sut/discarded game)))))
     (testing "returns nil if the room card isn't there"
-      (is (nil? (sut/play {:dungeon/room {0 :card}} 10))))))
+      (is (nil? (sut/play {::sut/room {0 :card}} 10))))))
 
 (deftest finished?-test
   (testing "finished?"
     (are [predicate dungeon] (predicate (sut/finished? dungeon))
-      true? {:dungeon/room {} :dungeon/draw-pile []}
-      false? {:dungeon/room {0 :card} :dungeon/draw-pile []}
-      false? {:dungeon/room {} :dungeon/draw-pile [:card]}
+      true? {::sut/room {} ::sut/draw-pile []}
+      false? {::sut/room {0 :card} ::sut/draw-pile []}
+      false? {::sut/room {} ::sut/draw-pile [:card]}
       false? nil)))
 
-(deftest skip-test
-  (testing "skip"
+(deftest skip-room-test
+  (testing "skip-room"
     (testing "returns nil if this room cannot be skipped"
-      (is (nil? (sut/skip (room/mark-cannot-skip {})))))
+      (is (nil? (sut/skip-room (room/mark-cannot-skip {})))))
     (testing "places current room's cards back into the draw pile"
-      (let [dungeon (sut/skip {:dungeon/room {0 :a 1 :b}})]
-        (is (nil? (:dungeon/room dungeon)))
-        (is (= #{:a :b} (-> dungeon :dungeon/draw-pile set)))))))
+      (let [dungeon (sut/skip-room {::sut/room {0 :a 1 :b}})]
+        (is (nil? (::sut/room dungeon)))
+        (is (= #{:a :b} (-> dungeon ::sut/draw-pile set)))))))

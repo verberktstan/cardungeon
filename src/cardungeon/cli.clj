@@ -1,11 +1,11 @@
 (ns cardungeon.cli
-  (:require [cardungeon.core :as game]
+  (:require [cardungeon.dungeon :as dungeon]
             [cardungeon.player :as player]
             [clojure.edn :as edn]
             [clojure.string :as str]))
 
 (defn- print-dungeon [{::player/keys [health]
-                       :dungeon/keys [room]}]
+                       ::dungeon/keys [room]}]
   (newline)
   (println "Health:" health)
   (doseq [[i {:card/keys [monster potion]}] (sort-by key room)]
@@ -20,22 +20,22 @@
   (println "type 'exit' to stop the game.")
   (println "type 'skip' to skip the current room.")
   (println "To play, enter the number of the dungeon room card to play it.")
-  (loop [game (game/new-game)
+  (loop [dungeon (dungeon/new-game)
          input ""]
     (let [exit? (#{"exit"} (str/lower-case input))
           skip? (#{"skip"} (str/lower-case input))
           parsed-input (edn/read-string input)
-          skipped-game (and skip? (game/skip game))
-          played-game (game/play game parsed-input)
-          new-game (or skipped-game played-game game)
-          room-cleared? (game/room-cleared? new-game)
-          new-game (cond-> new-game room-cleared? game/deal)
-          dead? (player/dead? new-game)]
-      (when (and skip? (not skipped-game))
+          skipped-room (and skip? (dungeon/skip-room dungeon))
+          played-dungeon (dungeon/play dungeon parsed-input)
+          new-dungeon (or skipped-room played-dungeon dungeon)
+          room-cleared? (dungeon/room-cleared? new-dungeon)
+          new-dungeon (cond-> new-dungeon room-cleared? dungeon/deal)
+          dead? (player/dead? new-dungeon)]
+      (when (and skip? (not skipped-room))
         (println "Cannot skip this room!"))
-      (when skipped-game
+      (when skipped-room
         (println "Skipping this dungeon room! Prepare for the next dungeon room.."))
-      (when (and room-cleared? (not skipped-game) (not dead?))
+      (when (and room-cleared? (not skipped-room) (not dead?))
         (println "Dungeon room cleared! Entering the next dungeon room.."))
       (cond
         exit?
@@ -44,8 +44,8 @@
         dead?
         (println "You didn't survive the dungeon!")
 
-        (game/finished? new-game)
+        (dungeon/finished? new-dungeon)
         (println "You cleared the dungeon!")
 
         :else
-        (recur (doto (or new-game game) print-dungeon) (read-line))))))
+        (recur (doto new-dungeon print-dungeon) (read-line))))))
