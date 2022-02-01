@@ -79,7 +79,7 @@
   "Returns the dungeon with the current room returnd to the back of the draw
   pile. Returns nil when impossible to skip."
   [{:room/keys [cannot-skip?] :dungeon/keys [room] :as dungeon}]
-  (when (< cannot-skip? 1)
+  (when (or (not cannot-skip?) (< cannot-skip? 1))
     (-> dungeon
         (dissoc :dungeon/room)
         (update :dungeon/draw-pile concat (-> room vals shuffle))

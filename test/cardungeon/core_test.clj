@@ -52,7 +52,7 @@
 (deftest skip-test
   (testing "skip"
     (testing "returns nil if this room cannot be skipped"
-      (is (nil? (sut/skip {:room/cannot-skip? true}))))
+      (is (nil? (sut/skip {:room/cannot-skip? 1}))))
     (testing "places current room's cards back into the draw pile"
       (let [dungeon (sut/skip {:dungeon/room {0 :a 1 :b}})]
         (is (nil? (:dungeon/room dungeon)))
