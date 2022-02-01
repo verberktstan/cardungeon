@@ -5,10 +5,10 @@
             [clojure.edn :as edn]
             [clojure.string :as str]))
 
-(defn- print-dungeon [{::player/keys [health]
+(defn- print-dungeon [{::player/keys [health max-health]
                        ::dungeon/keys [room]}]
   (newline)
-  (println "Health:" health)
+  (println "Health:" (str health "/" max-health))
   (doseq [[i card] (sort-by key room)]
     (println i ":" (card/->str card))))
 
