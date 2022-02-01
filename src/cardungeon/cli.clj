@@ -27,19 +27,24 @@
           skipped-game (and skip? (game/skip game))
           played-game (game/play game parsed-input)
           new-game (or skipped-game played-game game)
-          new-game (cond-> new-game (game/room-cleared? new-game) game/deal)]
+          room-cleared? (game/room-cleared? new-game)
+          new-game (cond-> new-game room-cleared? game/deal)
+          dead? (game/dead? new-game)]
       (when (and skip? (not skipped-game))
         (println "Cannot skip this room!"))
       (when skipped-game
-        (println "Skipping this room.."))
+        (println "Skipping this dungeon room! Prepare for the next dungeon room.."))
+      (when (and room-cleared? (not skipped-game) (not dead?))
+        (println "Dungeon room cleared! Entering the next dungeon room.."))
       (cond
         exit?
         (println "stopping game..")
 
+        dead?
+        (println "You didn't survive the dungeon!")
+
         (game/finished? new-game)
-        (do
-          (println new-game)
-          (println "You cleared the dungeon!"))
+        (println "You cleared the dungeon!")
 
         :else
         (recur (doto (or new-game game) print-dungeon) (read-line))))))

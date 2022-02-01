@@ -84,3 +84,6 @@
         (dissoc :dungeon/room)
         (update :dungeon/draw-pile concat (-> room vals shuffle))
         (assoc :room/cannot-skip? 2))))
+
+(defn dead? [{:player/keys [health]}]
+  (< health 1))
