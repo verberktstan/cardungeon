@@ -15,10 +15,13 @@
 (defn dead? [{::keys [health]}]
   (zero? health))
 
-(defn equip [{::keys [equipped] :as player} card]
-  (cond-> player
-    card (assoc ::equipped card)
-    (and card equipped) (update :to-discard conj equipped)))
+(defn equip
+  "Returns the player with card equipped and previously equipped card discarded.
+  Returns nil if the supplied card is not a weapon."
+  [{::keys [equipped] :as player} card]
+  (when (card/weapon? card)
+    (cond-> (assoc player ::equipped card)
+      equipped (update :to-discard conj equipped))))
 
 (defn equipped-weapon-damage [{::keys [equipped]}]
   (::card/weapon equipped))

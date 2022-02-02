@@ -37,7 +37,7 @@
 
 (defn- post-turn-fn [dungeon]
   (cond-> dungeon
-    (dungeon/room-cleared? dungeon) dungeon/deal))
+    (and (dungeon/room-cleared? dungeon) (dungeon/deal dungeon)) dungeon/deal))
 
 (defn -main [& _]
   (print-welcome-msg!)
