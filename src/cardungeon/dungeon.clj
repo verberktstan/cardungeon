@@ -69,14 +69,13 @@
 (defn- play-fn
   "Returns the function to be used for playing a card given a dungeon and card."
   [{:keys [slay?] :as dungeon} card]
-  (let [{::card/keys [monster potion weapon]} card
-        damage (player/equipped-weapon-damage dungeon)]
+  (let [damage (player/equipped-weapon-damage dungeon)]
     (if slay?
-      (when (and monster damage) (slay damage))
+      (when (and (card/monster? card) damage) (slay damage))
       (cond
-        monster fight
-        potion  heal
-        weapon  equip))))
+        (card/monster? card) fight
+        (card/potion?  card)  heal
+        (card/weapon?  card) equip))))
 
 (defn- reshuffle
   "Returns the game with discarded cards shuffled into the draw pile."

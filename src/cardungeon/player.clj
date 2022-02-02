@@ -24,7 +24,7 @@
       equipped (update :to-discard conj equipped))))
 
 (defn equipped-weapon-damage [{::keys [equipped]}]
-  (::card/weapon equipped))
+  (and (card/weapon? equipped) (card/value equipped)))
 
 (defn remember-last-slain [player card]
   (assoc player ::last-slain card))

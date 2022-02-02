@@ -1,5 +1,6 @@
 (ns cardungeon.dungeon-test
   (:require [clojure.test :refer [are deftest is testing]]
+            [cardungeon.fixtures :refer [monster0 monster3 monster21 make-player make-potion potion2]]
             [cardungeon.dungeon :as sut]
             [cardungeon.player :as player]
             [cardungeon.room :as room]
@@ -8,28 +9,30 @@
 ;; Basic fighting interaction with monster cards
 (deftest fight-test
   (testing "fight"
-    (testing "reduces player's health by monster strength"
-      (are [dungeon monster] (= dungeon (#'sut/fight {::player/health 13} monster))
-        {::player/health 10} {::card/monster 3}
-        {::player/health 13} {::card/monster 0}
-        {::player/health  0} {::card/monster 14}))
+    (testing "reduces player's health by monster strength and moves monster to `:to-discard`"
+      (are [player monster] (= player (#'sut/fight (make-player) monster))
+        (make-player {::player/health 17 :to-discard [monster3]}) monster3
+        (make-player {::player/health 20 :to-discard [monster0]}) monster0
+        (make-player {::player/health 0 :to-discard [monster21]}) monster21))
     (testing "asserts if supplied card is a monster"
-        (is (thrown? AssertionError (#'sut/fight {} {::card/potion 3}))))))
+        (is (thrown? AssertionError (#'sut/fight {} (make-potion 3)))))))
 
 ;; Basic healing interaction with potion cards
 (deftest heal-test
   (testing "heal"
     (testing "increases the player's health by potion strength"
-      (are [dungeon potion] (= dungeon (#'sut/heal {::player/health 8} potion))
-        (room/mark-already-healed {::player/health 13}) {::card/potion 5}
-        (room/mark-already-healed {::player/health 16}) {::card/potion 8}))
+      (are [health potion]
+          (= health
+             (::player/health (#'sut/heal (make-player {::player/health 8}) potion)))
+        13 (make-potion 5)
+        16 (make-potion 8)))
     (testing "doesn't work if already-healed in this room"
-      (is (= (room/mark-already-healed {})
+      (is (= (room/mark-already-healed (make-player {::player/health 10 :to-discard [potion2]}))
              (#'sut/heal
-              (room/mark-already-healed {})
-              {::card/potion 3}))))
+              (room/mark-already-healed (make-player {::player/health 10}))
+              potion2))))
     (testing "asserts if supplied card is a potion"
-      (is (thrown? AssertionError (#'sut/heal {} {::card/monster 3}))))))
+      (is (thrown? AssertionError (#'sut/heal (make-player) monster3))))))
 
 ;; Basic equipping interaction with weapon cards
 (deftest auto-discard-test
@@ -40,11 +43,11 @@
 
 (deftest play-test
   (testing "play"
-    (let [game #(-> {::player/health 13
-                    ::sut/room {0 {::card/monster 2}
-                                1 {::card/monster 3}
-                                2 {::card/potion 4}}}
-                   (sut/play %))]
+    (let [game #(-> (make-player {::player/health 13
+                                  ::sut/room {0 {::card/monster 2}
+                                              1 {::card/monster 3}
+                                              2 {::card/potion 4}}})
+                    (sut/play %))]
       (testing "returns the game with the room card removed"
         (is (= {1 {::card/monster 3} 2 {::card/potion 4}}
                (::sut/room (game 0))))

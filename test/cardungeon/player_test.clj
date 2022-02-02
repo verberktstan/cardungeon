@@ -1,15 +1,18 @@
 (ns cardungeon.player-test
   (:require [cardungeon.player :as sut]
+            [cardungeon.fixtures :refer [make-player weapon2 weapon3]]
             [clojure.test :refer [deftest is testing]]))
 
 (deftest equip-test
   (testing "equip"
-    (testing "returns the player if 'nil' card is supplied"
-      (is (= {::sut/equipped :weapon}
-             (sut/equip {::sut/equipped :weapon} nil))))
+    (testing "returns nil when card is not supplied"
+      (is (nil? (sut/equip (make-player) nil))))
     (testing "assoc's the card with ::player/equipped"
-      (is (= {::sut/equipped :weapon-a}
-             (sut/equip {} :weapon-a))))
+      (is (= (make-player {::sut/equipped weapon2})
+             (sut/equip (make-player) weapon2))))
     (testing "assoc's previously equipped card with :to-discard"
-      (is (= {::sut/equipped :weapon-b :to-discard [:weapon-a]}
-             (sut/equip {::sut/equipped :weapon-a} :weapon-b))))))
+      (is (= (make-player {::sut/equipped weapon3
+                      :to-discard [weapon2]})
+             (sut/equip
+              (make-player {::sut/equipped weapon2})
+              weapon3))))))

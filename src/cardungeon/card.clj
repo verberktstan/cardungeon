@@ -2,11 +2,6 @@
   (:refer-clojure :exclude [<]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Private functions
-(defn- value [{::keys [monster potion weapon]}]
-  (or monster potion weapon))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public functions
 
 (defn make
@@ -15,12 +10,15 @@
   [type]
   {:pre [(#{:monster :potion :weapon} type)]}
   (fn [value]
-    {:pre [(pos? value)]}
+    {:pre [(nat-int? value)]}
     {(keyword "cardungeon.card" (name type)) value}))
 
 (def monster? ::monster)
 (def potion? ::potion)
 (def weapon? ::weapon)
+
+(defn value [{::keys [monster potion weapon]}]
+  (or monster potion weapon))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions operating on a single card
