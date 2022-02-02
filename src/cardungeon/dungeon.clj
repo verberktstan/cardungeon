@@ -7,40 +7,77 @@
   (let [monster-range (map #(if (<= % 10) % 10) (range 2 15))]
     (concat
      (map (card/make :monster) monster-range)
-     (map (card/make :potion) (range 2 11)))))
+     (map (card/make :monster) monster-range)
+     (map (card/make :potion) (range 2 11))
+     (map (card/make :weapon) (range 2 11)))))
 
 (def BASE {::discarded BASE_DECK})
 
+(defn- discard [dungeon card]
+  (update dungeon :to-discard conj card))
+
+(defn- auto-discard [{:keys [to-discard] :as dungeon}]
+  (cond-> dungeon
+    (seq to-discard) (dissoc :to-discard)
+    (seq to-discard) (update ::discarded concat to-discard)))
+
 (defn- fight
   "Returns the dungeon with monster's strength subtracted from player's health."
-  [dungeon {::card/keys [monster]}]
-  {:pre [(number? monster)]}
-  (player/update-health dungeon - monster))
+  [dungeon {::card/keys [monster] :as card}]
+  {:pre [(nat-int? monster)]}
+  (-> dungeon
+      (player/update-health - monster)
+      (discard card)))
 
 (defn- heal
   "Returns the dungeon with the potion's value added to player's health, if not
   already healed in the current room."
-  [{::room/keys [already-healed?] :as dungeon} {::card/keys [potion]}]
-  {:pre [(number? potion)]}
+  [{::room/keys [already-healed?] :as dungeon} {::card/keys [potion] :as card}]
+  {:pre [(pos-int? potion)]}
   (cond-> dungeon
     (not already-healed?) (player/update-health + potion)
-    (not already-healed?) room/mark-already-healed))
+    (not already-healed?) room/mark-already-healed
+    :always (discard card)))
 
-(defn- play-fn [{::card/keys [monster potion]}]
-  (cond
-    monster fight
-    potion heal))
+(defn- equip [dungeon card]
+  (-> dungeon
+      (player/equip card)
+      player/forget-last-slain))
+
+(defn- slay [damage]
+  {:pre [(pos-int? damage)]}
+  (fn slay [{::player/keys [last-slain] :as dungeon}
+            {::card/keys [monster] :as card}]
+    {:pre [(pos-int? monster)]}
+    (when (or (not last-slain) (card/< card last-slain))
+      (let [damaged (card/damage card damage)]
+        (-> dungeon
+            (player/update-health - (::card/monster damaged))
+            (discard damaged)
+            (player/remember-last-slain card))))))
+
+(defn- play-fn [{:keys [slay?] :as dungeon} card]
+  (let [{::card/keys [monster potion weapon]} card
+        damage (player/equipped-weapon-damage dungeon)]
+    (if slay?
+      (when (and monster damage)
+        (slay damage))
+      (cond
+        monster fight
+        potion heal
+        weapon equip))))
 
 (defn play
   "Returns the game with dungeon-room card moved to dungeon-discarded, playing
   the room card on the fly"
   [{::keys [room] :as dungeon} room-idx]
   (when-let [card (get room room-idx)]
-    (let [play* (play-fn card)]
-      (-> dungeon
-          (update ::room room/remove-card room-idx)
-          (play* card)
-          (update ::discarded conj card)))))
+    (when-let [play* (play-fn dungeon card)]
+      (some-> dungeon
+        (update ::room room/remove-card room-idx)
+        (play* card)
+        auto-discard
+        (dissoc :slay?)))))
 
 (defn- reshuffle
   "Returns the game with discarded cards shuffled into the draw pile."

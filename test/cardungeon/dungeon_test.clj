@@ -31,18 +31,30 @@
     (testing "asserts if supplied card is a potion"
       (is (thrown? AssertionError (#'sut/heal {} {::card/monster 3}))))))
 
+;; Basic equipping interaction with weapon cards
+(deftest auto-discard-test
+  (testing "auto-sicard"
+    (testing "discards cards in :to-discard"
+      (is (= {::sut/discarded [:weapon-a]}
+             (#'sut/auto-discard {:to-discard [:weapon-a]}))))))
+
 (deftest play-test
   (testing "play"
-    (let [game (-> {::player/health 13
+    (let [game #(-> {::player/health 13
                     ::sut/room {0 {::card/monster 2}
-                                1 {::card/monster 3}}}
-                   (sut/play 0))]
+                                1 {::card/monster 3}
+                                2 {::card/potion 4}}}
+                   (sut/play %))]
       (testing "returns the game with the room card removed"
-        (is (= {1 {::card/monster 3}}
-               (::sut/room game))))
+        (is (= {1 {::card/monster 3} 2 {::card/potion 4}}
+               (::sut/room (game 0))))
+        (is (= {0 {::card/monster 2} 1 {::card/monster 3}}
+               (::sut/room (game 2)))))
       (testing "returns the game with the room card moved to discarded coll"
         (is (= [{::card/monster 2}]
-               (::sut/discarded game)))))
+               (-> 0 game ::sut/discarded)))
+        (is (= [{::card/potion 4}]
+               (-> 2 game ::sut/discarded)))))
     (testing "returns nil if the room card isn't there"
       (is (nil? (sut/play {::sut/room {0 :card}} 10))))))
 

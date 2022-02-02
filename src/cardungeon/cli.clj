@@ -12,10 +12,14 @@
   (println "type 'skip' to skip the current room.")
   (println "To play, enter the number of the dungeon room card to play it."))
 
-(defn- print-dungeon! [{::player/keys [health max-health]
+(defn- print-dungeon! [{::player/keys [equipped health last-slain max-health]
                        ::dungeon/keys [room]}]
   (newline)
   (println "Health:" (str health "/" max-health))
+  (when equipped
+    (println "Equipped:" (card/->str equipped)))
+  (when last-slain
+    (println "Last slain:" (card/->str last-slain)))
   (doseq [[i card] (sort-by key room)]
     (println i ":" (card/->str card))))
 
@@ -41,15 +45,19 @@
          input (read-line)]
     (let [{:keys [exit? room-idx skip?] :as cmd} (parse-cmd input)
           skipped (and skip? (dungeon/skip-room dungeon))
+          slayed (and room-idx (dungeon/play (assoc dungeon :slay? true) room-idx))
+          slay? (when slayed
+                  (println "Use your weapon to slay? Type 'y'.")
+                  (-> (read-line) str/lower-case #{"y"}))
           played (and room-idx (dungeon/play dungeon room-idx))
-          new-dungeon (post-turn-fn (or skipped played dungeon))]
+          new-dungeon (post-turn-fn (or skipped (when slay? slayed) played dungeon))]
       (when-not cmd
         (println "Can't do that! Please type 'exit', 'skip' or a room card number."))
       (when (and skip? (not skipped))
         (println "Can't skip this room!"))
       (when skipped
         (println "Skipping this dungeon room! Prepare for the next dungeon room.."))
-      (when (and room-idx (not played))
+      (when (and room-idx (and (not slayed) (not played)))
         (println "Can't play this!"))
       (when played
         (println "Playing.."))
