@@ -12,7 +12,8 @@
      (map (card/make :monster) monster-range)
      (map (card/make :monster) monster-range)
      (map (card/make :potion) (range 2 11))
-     (map (card/make :weapon) (range 2 11)))))
+     (map (card/make :weapon) (range 2 11))
+     (map (card/make :catapult) (range 1 4)))))
 
 (def ^:private BASE {::discarded BASE_DECK})
 
@@ -66,6 +67,13 @@
             (discard damaged)
             (player/remember-last-slain card))))))
 
+(defn- shoot [dungeon catapult]
+  (let [room (room/select dungeon)
+        monsters (filter (comp card/monster? val) room)
+        [room-idx monster] (-> monsters shuffle first)]
+    (println "shoot!" room-idx monster)
+    (update dungeon room-idx card/damage (card/value catapult))))
+
 (defn- play-fn
   "Returns the function to be used for playing a card given a dungeon and card."
   [{:keys [slay?] :as dungeon} card]
@@ -73,9 +81,10 @@
     (if slay?
       (when (and (card/monster? card) damage) (slay damage))
       (cond
-        (card/monster? card) fight
-        (card/potion?  card)  heal
-        (card/weapon?  card) equip))))
+        (card/catapult? card) shoot
+        (card/monster?  card) fight
+        (card/potion?   card)  heal
+        (card/weapon?   card) equip))))
 
 (defn- reshuffle
   "Returns the game with discarded cards shuffled into the draw pile."
