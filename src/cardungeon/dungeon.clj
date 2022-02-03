@@ -90,16 +90,14 @@
 (defn play
   "Returns the game with dungeon-room card moved to dungeon-discarded, playing
   the room card on the fly"
-  [{::keys [room] :as dungeon} room-idx]
-  (when-let [card (get room room-idx)]
+  [dungeon room-idx]
+  (when-let [card (get dungeon room-idx)]
     (when-let [play* (play-fn dungeon card)]
       (some-> dungeon
-        (update ::room room/remove-card room-idx)
+        (room/remove-card room-idx)
         (play* card)
         auto-discard
         (dissoc :slay?)))))
-
-(def room-cleared? (comp room/cleared? ::room))
 
 (defn deal
   "Returns the game with up to 4 cards dealt from draw pile into the room. Returns
@@ -110,7 +108,8 @@
     (when (seq drawn)
       (-> dungeon
           (update ::draw-pile (partial drop n-cards))
-          (update ::room room/merge drawn)
+          #_(update ::room room/merge drawn)
+          (room/merge drawn)
           room/unmark-already-healed
           room/dec-cannot-skip))))
 
@@ -125,9 +124,10 @@
 (defn skip-room
   "Returns the dungeon with the current room returnd to the back of the draw
   pile. Returns nil when it's impossible to skip."
-  [{::keys [room] :as dungeon}]
-  (when (room/can-skip? dungeon)
-    (-> dungeon
-        (dissoc ::room)
-        (update ::draw-pile concat (-> room vals shuffle))
-        room/mark-cannot-skip)))
+  [dungeon]
+  (let [room (room/select dungeon)]
+    (when (room/can-skip? dungeon)
+      (-> dungeon
+          room/dissoc
+          (update ::draw-pile concat (-> room vals shuffle))
+          room/mark-cannot-skip))))

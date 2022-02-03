@@ -2,7 +2,7 @@
   (:require [cardungeon.dungeon :as dungeon]
             [cardungeon.player :as player]
             [cardungeon.card :as card]
-            [clojure.edn :as edn]
+            [cardungeon.room :as room]
             [clojure.string :as str]))
 
 (defn- print-welcome-msg! []
@@ -10,18 +10,19 @@
   (println "Welcome to Cardungeon!")
   (println "type 'exit' to stop the game.")
   (println "type 'skip' to skip the current room.")
-  (println "To play, enter the number of the dungeon room card to play it."))
+  (println "To play, enter the 'east', 'north', 'south' or 'west' to play the card in that direction."))
 
-(defn- print-dungeon! [{::player/keys [equipped health last-slain max-health]
-                       ::dungeon/keys [room]}]
+(defn- print-room-card [[idx card]]
+  (println (name idx) ":" (card/->str card)))
+
+(defn- print-dungeon! [{::player/keys [equipped health last-slain max-health] :as dungeon}]
   (newline)
   (println "Health:" (str health "/" max-health))
   (when equipped
     (println "Equipped:" (card/->str equipped)))
   (when last-slain
     (println "Last slain:" (card/->str last-slain)))
-  (doseq [[i card] (sort-by key room)]
-    (println i ":" (card/->str card))))
+  (run! print-room-card (room/prepare-for-print dungeon)))
 
 (defn- parse-cmd
   "Parses input string into a map with a command and a value.
@@ -29,15 +30,15 @@
   [s]
   (when s
     (let [lcs (-> s str/trim str/lower-case)
-          room-idx (edn/read-string s)]
+          room-idx (room/->index s)]
       (cond
         (#{"exit"} lcs) {:exit? true}
         (#{"skip"} lcs) {:skip? true}
-        (nat-int? room-idx) {:room-idx room-idx}))))
+        room-idx {:room-idx room-idx}))))
 
 (defn- post-turn-fn [dungeon]
   (cond-> dungeon
-    (and (dungeon/room-cleared? dungeon) (dungeon/deal dungeon)) dungeon/deal))
+    (and (room/cleared? dungeon) (dungeon/deal dungeon)) dungeon/deal))
 
 (defn -main [& _]
   (print-welcome-msg!)
