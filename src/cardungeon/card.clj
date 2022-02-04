@@ -3,6 +3,9 @@
 
 (def ^:private TYPES #{:catapult :monster :potion :shield :shieldify :weapon})
 
+(defn- namespaced-keyword [x]
+  (keyword "cardungeon.card" (name x)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public functions
 
@@ -13,14 +16,20 @@
   {:pre [(contains? TYPES type)]}
   (fn [value]
     {:pre [(nat-int? value)]}
-    {(keyword "cardungeon.card" (name type)) value}))
+    {(namespaced-keyword type) value}))
 
-(def catapult? ::catapult)
-(def monster? ::monster)
-(def potion? ::potion)
-(def shield? ::shield)
-(def shieldify? ::shieldify)
-(def weapon? ::weapon)
+(defn- make-check
+  "Returns a function that checks for a given key and returns the full map."
+  [s]
+  (fn check* [card]
+    (and ((namespaced-keyword s) card) card)))
+
+(def catapult? (make-check "catapult"))
+(def monster? (make-check "monster"))
+(def potion? (make-check "potion"))
+(def shield? (make-check "shield"))
+(def shieldify? (make-check "shieldify"))
+(def weapon? (make-check "weapon"))
 
 (defn value [{::keys [catapult monster potion shield shieldify weapon]}]
   (or catapult monster potion shield shieldify weapon))

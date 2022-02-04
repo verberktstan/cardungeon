@@ -23,14 +23,12 @@
     (cond-> (assoc player ::equipped card)
       equipped (update :to-discard conj equipped))))
 
-(defn equipped-weapon-damage [{::keys [equipped]}]
-  (and (card/weapon? equipped) (card/value equipped)))
-
 (defn remember-last-slain [player card]
   (assoc player ::last-slain card))
 
 (defn forget-last-slain [player]
   (dissoc player ::last-slain))
 
-(defn equipped-shield-strength [{::keys [equipped]}]
-  (and (card/shield? equipped) (card/value equipped)))
+(def equipped-weapon-value (comp card/value card/weapon? ::equipped))
+
+(def equipped-shield-value (comp card/value card/shield? ::equipped))

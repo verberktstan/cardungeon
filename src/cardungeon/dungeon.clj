@@ -55,7 +55,7 @@
   "Returns the dungeon with monster's strength subtracted from player's health."
   [dungeon {::card/keys [monster] :as card}]
   {:pre [(card/monster? card)]}
-  (let [shield-strength (player/equipped-shield-strength dungeon)
+  (let [shield-strength (player/equipped-shield-value dungeon)
         make-shield (card/make :shield)
         new-shield (when-let [new-val (and shield-strength
                                            (> shield-strength 1)
@@ -98,7 +98,7 @@
 (defn- play-fn
   "Returns the function to be used for playing a card given a dungeon and card."
   [{:keys [slay?] :as dungeon} card]
-  (let [damage (player/equipped-weapon-damage dungeon)]
+  (let [damage (player/equipped-weapon-value dungeon)]
     (if slay?
       (when (and (card/monster? card) damage) (slay damage))
       (cond
