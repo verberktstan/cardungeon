@@ -81,16 +81,13 @@
             (player/remember-last-slain card))))))
 
 (defn- shoot [dungeon catapult]
-  (let [room (room/select dungeon)
-        monsters (filter (comp card/monster? val) room)
-        [room-idx _] (-> monsters shuffle first)]
+  (let [[room-idx _] (room/random-entry card/monster? (room/select dungeon))]
     (-> dungeon
         (update room-idx card/damage (card/value catapult))
         (discard catapult))))
 
 (defn- shieldify [dungeon card]
-  (let [room (seq (room/select dungeon))
-        room-idx (-> (map key room) shuffle first)]
+  (let [[room-idx _] (room/random-entry (room/select dungeon))]
     (-> dungeon
         (update room-idx card/shieldify)
         (discard card))))

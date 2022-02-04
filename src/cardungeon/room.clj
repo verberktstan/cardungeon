@@ -59,3 +59,14 @@
        (sort-by key)
        (map (juxt (comp name key) (comp card/->str val)))
        (map (partial interpose ":"))))
+
+(defn random-entry
+  "Returns a random map-entry of one of the room cards, filtering by optionally
+  supplied predicate."
+  ([room]
+   (random-entry identity room))
+  ([pred room]
+   (->> (select room)
+       (filter (comp pred val))
+       shuffle
+       first)))
