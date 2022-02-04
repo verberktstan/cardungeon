@@ -8,7 +8,7 @@
   "Returns a function that returns a new card with a given type and value.
   `((make :monster) 2) => {::monster 2}`"
   [type]
-  {:pre [(#{:catapult :monster :potion :weapon} type)]}
+  {:pre [(#{:catapult :monster :potion :shield :weapon} type)]}
   (fn [value]
     {:pre [(nat-int? value)]}
     {(keyword "cardungeon.card" (name type)) value}))
@@ -16,10 +16,11 @@
 (def catapult? ::catapult)
 (def monster? ::monster)
 (def potion? ::potion)
+(def shield? ::shield)
 (def weapon? ::weapon)
 
-(defn value [{::keys [catapult monster potion weapon]}]
-  (or catapult monster potion weapon))
+(defn value [{::keys [catapult monster potion shield weapon]}]
+  (or catapult monster potion shield weapon))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions operating on a single card
@@ -27,11 +28,12 @@
 (defn ->str
   "Returns a human readable string representing the card.
   `(->str {::monster 2}) => \"Monster(2)\"`"
-  [{::keys [catapult monster potion weapon]}]
+  [{::keys [catapult monster potion shield weapon]}]
   (cond
     catapult (str "Catapult(" catapult ")")
     monster (str "Monster(" monster ")")
     potion (str "Potion(" potion ")")
+    shield (str "Shield(" shield ")")
     weapon (str "Weapon(" weapon ")")))
 
 (defn damage

@@ -19,9 +19,13 @@
   (newline)
   (println "Health:" (str health "/" max-health))
   (when equipped
-    (println "Equipped:" (card/->str equipped)))
-  (when last-slain
-    (println "Last slain:" (card/->str last-slain)))
+    (println
+     "Equipped:"
+     (card/->str equipped)
+     (if last-slain
+       (str "(last slain: " (card/->str last-slain) ")")
+       "")))
+  (println "---===::: Dungeon Room :::===---")
   (run! print-room-card (room/prepare-for-print dungeon)))
 
 (defn- parse-cmd

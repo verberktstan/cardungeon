@@ -19,7 +19,7 @@
   "Returns the player with card equipped and previously equipped card discarded.
   Returns nil if the supplied card is not a weapon."
   [{::keys [equipped] :as player} card]
-  (when (card/weapon? card)
+  (when (or (card/weapon? card) (card/shield? card))
     (cond-> (assoc player ::equipped card)
       equipped (update :to-discard conj equipped))))
 
@@ -31,3 +31,6 @@
 
 (defn forget-last-slain [player]
   (dissoc player ::last-slain))
+
+(defn equipped-shield-strength [{::keys [equipped]}]
+  (and (card/shield? equipped) (card/value equipped)))

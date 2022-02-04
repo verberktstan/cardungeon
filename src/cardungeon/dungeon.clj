@@ -12,8 +12,9 @@
      (map (card/make :monster) monster-range)
      (map (card/make :monster) monster-range)
      (map (card/make :potion) (range 2 11))
-     (map (card/make :weapon) (range 2 11))
-     (map (card/make :catapult) (range 1 4)))))
+     (map (card/make :weapon) (range 2 9))
+     (map (card/make :catapult) (range 1 4))
+     (map (card/make :shield) (range 1 4)))))
 
 (def ^:private BASE {::discarded BASE_DECK})
 
@@ -33,14 +34,6 @@
     (seq to-discard) (dissoc :to-discard)
     (seq to-discard) (update ::discarded concat to-discard)))
 
-(defn- fight
-  "Returns the dungeon with monster's strength subtracted from player's health."
-  [dungeon {::card/keys [monster] :as card}]
-  {:pre [(card/monster? card)]}
-  (-> dungeon
-      (player/update-health - monster)
-      (discard card)))
-
 (defn- heal
   "Returns the dungeon with the potion's value added to player's health, if not
   already healed in the current room."
@@ -56,6 +49,22 @@
   [dungeon card]
   (some-> dungeon (player/equip card) player/forget-last-slain))
 
+(defn- fight
+  "Returns the dungeon with monster's strength subtracted from player's health."
+  [dungeon {::card/keys [monster] :as card}]
+  {:pre [(card/monster? card)]}
+  (let [shield-strength (player/equipped-shield-strength dungeon)
+        make-shield (card/make :shield)
+        new-shield (when-let [new-val (and shield-strength (dec shield-strength))]
+                     (make-shield new-val))
+        damage (cond-> monster
+                 shield-strength (- shield-strength)
+                 :always (max 0))]
+    (cond-> dungeon
+      (pos? damage) (player/update-health - damage)
+      new-shield (equip new-shield)
+      :always (discard card))))
+
 (defn- slay [damage]
   {:pre [(pos-int? damage)]}
   (fn slay [{::player/keys [last-slain] :as dungeon} card]
@@ -70,9 +79,10 @@
 (defn- shoot [dungeon catapult]
   (let [room (room/select dungeon)
         monsters (filter (comp card/monster? val) room)
-        [room-idx monster] (-> monsters shuffle first)]
-    (println "shoot!" room-idx monster)
-    (update dungeon room-idx card/damage (card/value catapult))))
+        [room-idx _] (-> monsters shuffle first)]
+    (-> dungeon
+        (update room-idx card/damage (card/value catapult))
+        (discard catapult))))
 
 (defn- play-fn
   "Returns the function to be used for playing a card given a dungeon and card."
@@ -84,6 +94,7 @@
         (card/catapult? card) shoot
         (card/monster?  card) fight
         (card/potion?   card)  heal
+        (card/shield?   card) equip
         (card/weapon?   card) equip))))
 
 (defn- reshuffle
@@ -117,7 +128,6 @@
     (when (seq drawn)
       (-> dungeon
           (update ::draw-pile (partial drop n-cards))
-          #_(update ::room room/merge drawn)
           (room/merge drawn)
           room/unmark-already-healed
           room/dec-cannot-skip))))
