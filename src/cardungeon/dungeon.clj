@@ -7,10 +7,11 @@
 ;; Private data
 
 (def ^:private BASE_DECK
-  (let [monster-range (map #(if (<= % 10) % 10) (range 2 15))]
+  (let [monster-range (map #(if (<= % 10) % 10) (range 2 15))
+        monster-range2 (map #(if (<= % 12) % 12) (range 2 15))]
     (concat
      (map (card/make :monster) monster-range)
-     (map (card/make :monster) monster-range)
+     (map (card/make :monster) monster-range2)
      (map (card/make :potion) (range 2 9))
      (map (card/make :weapon) (range 2 7))
      (map (card/make :catapult) (range 1 4))
