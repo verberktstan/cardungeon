@@ -12,9 +12,6 @@
   (println "type 'skip' to skip the current room.")
   (println "To play, enter the 'east', 'north', 'south' or 'west' to play the card in that direction."))
 
-(defn- print-room-card [[idx card]]
-  (println (name idx) ":" (card/->str card)))
-
 (defn- print-dungeon! [{::player/keys [equipped health last-slain max-health] :as dungeon}]
   (newline)
   (println "Health:" (str health "/" max-health))
@@ -26,7 +23,7 @@
        (str "(last slain: " (card/->str last-slain) ")")
        "")))
   (println "---===::: Dungeon Room :::===---")
-  (run! print-room-card (room/prepare-for-print dungeon)))
+  (run! (partial apply println) (room/prepare-for-print dungeon)))
 
 (defn- parse-cmd
   "Parses input string into a map with a command and a value.

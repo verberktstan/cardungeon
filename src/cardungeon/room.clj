@@ -1,12 +1,12 @@
 (ns cardungeon.room
-  (:refer-clojure :exclude [dissoc select merge]))
+  (:refer-clojure :exclude [select merge])
+  (:require [cardungeon.card :as card]))
 
 (def BASE {::cannot-skip? 1})
 
-(def INDICES [::north ::east ::south ::west])
+(def ^:private INDICES #{::north ::east ::south ::west})
 
-(defn index? [k]
-  (contains? (set INDICES) k))
+(def index? INDICES)
 
 (defn ->index [s]
   (let [idx (keyword "cardungeon.room" (name s))]
@@ -16,7 +16,7 @@
   (assoc room ::already-healed? true))
 
 (defn unmark-already-healed [room]
-  (clojure.core/dissoc room ::already-healed?))
+  (dissoc room ::already-healed?))
 
 (defn mark-cannot-skip [room]
   (assoc room ::cannot-skip? 2))
@@ -28,8 +28,8 @@
   (or (not cannot-skip?) (< cannot-skip? 1)))
 
 (defn remove-card [room idx]
-  {:pre [((set INDICES) idx)]}
-  (clojure.core/dissoc room idx))
+  {:pre [(index? idx)]}
+  (dissoc room idx))
 
 (defn cleared? [room]
   (-> (select-keys room INDICES) count #{0 1}))
@@ -37,14 +37,25 @@
 (defn merge
   "Returns the game with cards merged into the room, using free indices."
   [room cards]
-  (let [free-indices (remove (partial contains? room) INDICES)]
-    (clojure.core/merge room (zipmap free-indices cards))))
+  (when (seq cards)
+    (let [free-indices (remove room (sort INDICES))]
+      (clojure.core/merge room (zipmap free-indices cards)))))
 
-(defn select [room]
+(defn select
+  "Returns the room with only the indices kept."
+  [room]
   (select-keys room INDICES))
 
-(defn dissoc [room]
-  (apply clojure.core/dissoc room INDICES))
+(defn forget
+  "Returns the room with all the indices dissociated."
+  [room]
+  (apply dissoc room INDICES))
 
-(defn prepare-for-print [room]
-  (sort-by key (select room)))
+(defn prepare-for-print
+  "Returns a collection with collections that are printable in a humanly readable
+  way."
+  [room]
+  (->> (select room)
+       (sort-by key)
+       (map (juxt (comp name key) (comp card/->str val)))
+       (map (partial interpose ":"))))

@@ -159,6 +159,6 @@
   (let [room (room/select dungeon)]
     (when (room/can-skip? dungeon)
       (-> dungeon
-          room/dissoc
+          room/forget
           (update ::draw-pile concat (-> room vals shuffle))
           room/mark-cannot-skip))))
