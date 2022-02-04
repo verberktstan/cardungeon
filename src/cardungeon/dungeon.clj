@@ -11,10 +11,11 @@
     (concat
      (map (card/make :monster) monster-range)
      (map (card/make :monster) monster-range)
-     (map (card/make :potion) (range 2 11))
-     (map (card/make :weapon) (range 2 9))
+     (map (card/make :potion) (range 2 9))
+     (map (card/make :weapon) (range 2 7))
      (map (card/make :catapult) (range 1 4))
-     (map (card/make :shield) (range 1 4)))))
+     (map (card/make :shield) (range 1 4))
+     (map (card/make :shieldify) [5]))))
 
 (def ^:private BASE {::discarded BASE_DECK})
 
@@ -55,7 +56,9 @@
   {:pre [(card/monster? card)]}
   (let [shield-strength (player/equipped-shield-strength dungeon)
         make-shield (card/make :shield)
-        new-shield (when-let [new-val (and shield-strength (dec shield-strength))]
+        new-shield (when-let [new-val (and shield-strength
+                                           (> shield-strength 1)
+                                           (dec shield-strength))]
                      (make-shield new-val))
         damage (cond-> monster
                  shield-strength (- shield-strength)
@@ -84,6 +87,13 @@
         (update room-idx card/damage (card/value catapult))
         (discard catapult))))
 
+(defn- shieldify [dungeon card]
+  (let [room (seq (room/select dungeon))
+        room-idx (-> (map key room) shuffle first)]
+    (-> dungeon
+        (update room-idx card/shieldify)
+        (discard card))))
+
 (defn- play-fn
   "Returns the function to be used for playing a card given a dungeon and card."
   [{:keys [slay?] :as dungeon} card]
@@ -91,11 +101,12 @@
     (if slay?
       (when (and (card/monster? card) damage) (slay damage))
       (cond
-        (card/catapult? card) shoot
-        (card/monster?  card) fight
-        (card/potion?   card)  heal
-        (card/shield?   card) equip
-        (card/weapon?   card) equip))))
+        (card/catapult?  card) shoot
+        (card/monster?   card) fight
+        (card/potion?    card)  heal
+        (card/shield?    card) equip
+        (card/shieldify? card) shieldify
+        (card/weapon?    card) equip))))
 
 (defn- reshuffle
   "Returns the game with discarded cards shuffled into the draw pile."
