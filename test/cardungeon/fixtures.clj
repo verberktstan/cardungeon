@@ -10,6 +10,7 @@
 
 (def monster0 (make-monster 0))
 (def monster1 (make-monster 1))
+(def monster2 (make-monster 2))
 (def monster3 (make-monster 3))
 (def monster4 (make-monster 4))
 (def monster21 (make-monster 21))
@@ -17,6 +18,8 @@
 (def make-potion (card/make :potion))
 
 (def potion2 (make-potion 2))
+(def potion4 (make-potion 4))
+(def potion8 (make-potion 8))
 
 (def make-shield (card/make :shield))
 
