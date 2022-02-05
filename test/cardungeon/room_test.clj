@@ -4,6 +4,15 @@
             [cardungeon.card :as card]
             [clojure.test :refer [are deftest is testing]]))
 
+(deftest ->index-test
+  (testing "->index"
+    (are [result input] (= result (sut/->index input))
+      ::sut/north "north"
+      ::sut/north :north
+      nil "unknown"
+      nil :unknown
+      nil nil)))
+
 (deftest cleared?-test
   (testing "cleared?"
     (testing "returns a truethy value when room is cleared"

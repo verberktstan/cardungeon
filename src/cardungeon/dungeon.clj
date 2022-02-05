@@ -39,10 +39,10 @@
 (defn- heal
   "Returns the dungeon with the potion's value added to player's health, if not
   already healed in the current room."
-  [{::room/keys [already-healed?] :as dungeon} {::card/keys [potion] :as card}]
+  [{::room/keys [already-healed?] :as dungeon} card]
   {:pre [(card/potion? card)]}
   (cond-> dungeon
-    (not already-healed?) (player/update-health + potion)
+    (not already-healed?) (player/update-health + (card/value card))
     (not already-healed?) room/mark-already-healed
     :always (discard card)))
 
@@ -53,21 +53,21 @@
 
 (defn- fight
   "Returns the dungeon with monster's strength subtracted from player's health."
-  [dungeon {::card/keys [monster] :as card}]
-  {:pre [(card/monster? card)]}
+  [dungeon monster-card]
+  {:pre [(card/monster? monster-card)]}
   (let [shield-strength (player/equipped-shield-value dungeon)
         make-shield (card/make :shield)
         new-shield (when-let [new-val (and shield-strength
                                            (> shield-strength 1)
                                            (dec shield-strength))]
                      (make-shield new-val))
-        damage (cond-> monster
+        damage (cond-> (card/value monster-card)
                  shield-strength (- shield-strength)
                  :always (max 0))]
     (cond-> dungeon
       (pos? damage) (player/update-health - damage)
       new-shield (equip new-shield)
-      :always (discard card))))
+      :always (discard monster-card))))
 
 (defn- slay [damage]
   {:pre [(pos-int? damage)]}
@@ -76,7 +76,7 @@
     (when (or (not last-slain) (card/< card last-slain))
       (let [damaged (card/damage card damage)]
         (-> dungeon
-            (player/update-health - (::card/monster damaged))
+            (player/update-health - (card/value damaged))
             (discard damaged)
             (player/remember-last-slain card))))))
 
