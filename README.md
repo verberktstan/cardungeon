@@ -17,5 +17,5 @@ clj -X:play
 To run the tests:
 
 ```
-clj -A:test
+clj -X:test
 ```
