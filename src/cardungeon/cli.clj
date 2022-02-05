@@ -3,6 +3,7 @@
             [cardungeon.player :as player]
             [cardungeon.card :as card]
             [cardungeon.room :as room]
+            [cardungeon.message :as message]
             [clojure.string :as str]))
 
 (defn- print-welcome-msg! []
@@ -70,10 +71,14 @@
         (println "Skipping this dungeon room! Prepare for the next dungeon room.."))
       (when (and room-idx (and (not slayed) (not played)))
         (println "Can't play this!"))
-      (when played
-        (println "Playing.."))
+      (when-let [message (and new-dungeon (:message new-dungeon))]
+        (println message))
       (cond
         exit? (println "Stopping game..")
         (player/dead? new-dungeon) (println "You didn't survide the dungeon!")
         (dungeon/finished? new-dungeon) (println "You cleared the dungeon!")
-        :else (recur (doto new-dungeon print-dungeon!) (read-line))))))
+        :else (recur
+               (-> new-dungeon
+                   message/forget
+                   (doto print-dungeon!))
+               (read-line))))))

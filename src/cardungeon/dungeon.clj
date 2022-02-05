@@ -1,7 +1,8 @@
 (ns cardungeon.dungeon
   (:require [cardungeon.card :as card]
             [cardungeon.player :as player]
-            [cardungeon.room :as room]))
+            [cardungeon.room :as room]
+            [cardungeon.message :as message]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Private data
@@ -49,7 +50,10 @@
 (defn- equip
   "Returns the dungeon with card equipped and forget about the last slain monster."
   [dungeon card]
-  (some-> dungeon (player/equip card) player/forget-last-slain))
+  (some-> dungeon
+          (player/equip card)
+          player/forget-last-slain
+          (message/set (str "Equipped " (card/->str card)))))
 
 (defn- fight
   "Returns the dungeon with monster's strength subtracted from player's health."
@@ -67,7 +71,8 @@
     (cond-> dungeon
       (pos? damage) (player/update-health - damage)
       new-shield (equip new-shield)
-      :always (discard monster-card))))
+      :always (discard monster-card)
+      :always (message/set (str "Fighting " (card/->str monster-card)  "...")))))
 
 (defn- slay [damage]
   {:pre [(pos-int? damage)]}
@@ -78,19 +83,22 @@
         (-> dungeon
             (player/update-health - (card/value damaged))
             (discard damaged)
-            (player/remember-last-slain card))))))
+            (player/remember-last-slain card)
+            (message/set (str "Slaying " (card/->str card) ", dealing " damage " damage!")))))))
 
 (defn- shoot [dungeon catapult]
-  (let [[room-idx _] (room/random-entry card/monster? (room/select dungeon))]
-    (-> dungeon
-        (update room-idx card/damage (card/value catapult))
-        (discard catapult))))
+  (let [[room-idx monster] (room/random-entry card/monster? (room/select dungeon))
+        damage-done (update dungeon room-idx card/damage (card/value catapult))]
+    (-> damage-done
+        (discard catapult)
+        (message/set (str "Shooting catapult; hits monster in the " (name room-idx) " [" (card/->str monster) " -> " (-> damage-done room-idx card/->str) "]")))))
 
 (defn- shieldify [dungeon card]
-  (let [[room-idx _] (room/random-entry (room/select dungeon))]
+  (let [[room-idx a-card] (room/random-entry (room/select dungeon))]
     (-> dungeon
         (update room-idx card/shieldify)
-        (discard card))))
+        (discard card)
+        (message/set (str "Turning " (card/->str a-card) " into a shield!")))))
 
 (defn- play-fn
   "Returns the function to be used for playing a card given a dungeon and card."
