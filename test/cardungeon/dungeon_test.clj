@@ -8,14 +8,16 @@
 
 ;; Basic fighting interaction with monster cards
 (deftest fight-test
-  (testing "fight"
-    (testing "reduces player's health by monster strength and moves monster to `:to-discard`"
-      (are [player monster] (= player (#'sut/fight (f/make-player) monster))
-        (f/make-player {::player/health 17 :to-discard [f/monster3]}) f/monster3
-        (f/make-player {::player/health 20 :to-discard [f/monster0]}) f/monster0
-        (f/make-player {::player/health 0 :to-discard [f/monster21]}) f/monster21))
-    (testing "asserts if supplied card is a monster"
-        (is (thrown? AssertionError (#'sut/fight {} (f/make-potion 3)))))))
+  (let [select-relevant #(select-keys % [::player/health :to-discard])]
+    (testing "fight"
+      (testing "reduces player's health by monster strength and moves monster to `:to-discard`"
+        (are [player monster] (= (select-relevant player)
+                                 (-> (f/make-player) (#'sut/fight monster) select-relevant))
+          (f/make-player {::player/health 17 :to-discard [f/monster3]}) f/monster3
+          (f/make-player {::player/health 20 :to-discard [f/monster0]}) f/monster0
+          (f/make-player {::player/health 0 :to-discard [f/monster21]}) f/monster21))
+      (testing "asserts if supplied card is a monster"
+        (is (thrown? AssertionError (#'sut/fight {} (f/make-potion 3))))))))
 
 ;; Basic healing interaction with potion cards
 (deftest heal-test

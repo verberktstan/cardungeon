@@ -139,8 +139,8 @@
 (defn deal
   "Returns the game with up to 4 cards dealt from draw pile into the room. Returns
   nil when no cards can be drawn from the draw pile."
-  [{::keys [draw-pile room] :as dungeon}]
-  (let [n-cards (- 4 (count room))
+  [{::keys [draw-pile] :as dungeon}]
+  (let [n-cards (- 4 (-> dungeon room/select count))
         drawn (take n-cards draw-pile)]
     (when (seq drawn)
       (-> dungeon
