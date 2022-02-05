@@ -6,21 +6,15 @@ Cardungeon is a dungeon crawler based on the scoundrel card game.
 
 Make sure clojure is installed. (Have a look at [Clojure.org / getting started](https://clojure.org/guides/getting_started))
 
-Run the main function in cardungeon.cli namespace from the commandline:
+Run the 'play' alias to play the game:
 
 ```
-clj -m cardungeon.cli
+clj -X:play
 ```
 
 ## Development
 
-To run the tests
-
-```
-./run-tests
-```
-
-Or
+To run the tests:
 
 ```
 clj -A:test
