@@ -29,10 +29,12 @@
         12 f/potion4
         16 f/potion8))
     (testing "doesn't work if already-healed in this room"
-      (is (= (room/mark-already-healed (f/make-player {::player/health 10 :to-discard [f/potion2]}))
-             (#'sut/heal
-              (room/mark-already-healed (f/make-player {::player/health 10}))
-              f/potion2))))
+      (let [select-relevant #(select-keys % [::player/health :to-discard])]
+        (is (= {::player/health 10 :to-discard [f/potion2]}
+               (-> {::player/health 10}
+                   (room/mark-already-healed)
+                   (#'sut/heal f/potion2)
+                   select-relevant)))))
     (testing "asserts if supplied card is a potion"
       (is (thrown? AssertionError (#'sut/heal (f/make-player) f/monster3))))))
 

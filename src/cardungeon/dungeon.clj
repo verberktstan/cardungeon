@@ -45,7 +45,9 @@
   (cond-> dungeon
     (not already-healed?) (player/update-health + (card/value card))
     (not already-healed?) room/mark-already-healed
-    :always (discard card)))
+    :always (discard card)
+    (not already-healed?) (message/set (str "Healing " (card/value card)))
+    already-healed? (message/set (str "Cannot heal! Discarding potion.."))))
 
 (defn- equip
   "Returns the dungeon with card equipped and forget about the last slain monster."
