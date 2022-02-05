@@ -1,4 +1,5 @@
-(ns cardungeon.message)
+(ns cardungeon.message
+  (:refer-clojure :exclude [set]))
 
 (defn set [dungeon s]
   (cond-> dungeon
