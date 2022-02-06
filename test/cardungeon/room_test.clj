@@ -53,7 +53,7 @@
   (testing "prepare-for-print"
     (testing "returns a coll of direction, a colon and the card."
       (is (=
-           [["east" ":" (card/->str f/potion2)]
-            ["north" ":" (card/->str f/monster3)]]
+           [(str "east: " (card/->str f/potion2))
+            (str "north: " (card/->str f/monster3))]
            (sut/prepare-for-print {::sut/north f/monster3 ::sut/east f/potion2})))
       (is (empty? (sut/prepare-for-print {:other "stuff"}))))))

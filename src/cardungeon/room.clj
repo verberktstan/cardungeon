@@ -58,7 +58,8 @@
   (->> (select room)
        (sort-by key)
        (map (juxt (comp name key) (comp card/->str val)))
-       (map (partial interpose ":"))))
+       (map (partial interpose ": "))
+       (map (partial apply str))))
 
 (defn random-entry
   "Returns a random map-entry of one of the room cards, filtering by optionally

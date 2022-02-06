@@ -32,3 +32,13 @@
 (def equipped-weapon-value (comp card/value card/weapon? ::equipped))
 
 (def equipped-shield-value (comp card/value card/shield? ::equipped))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Regarding texts for printing
+
+(defn health-text [{::keys [health max-health]}]
+  (str "Health: " health "/" max-health))
+
+(defn equipped-text [{::keys [equipped last-slain]}]
+  (str (when equipped (str "Equipped: " (card/->str equipped)))
+       (when last-slain (str " - last slain: " (card/->str last-slain)))))
