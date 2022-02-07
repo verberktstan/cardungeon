@@ -5,36 +5,36 @@
             [clojure.test :refer [are deftest is testing]]))
 
 (deftest ->index-test
-  (testing "->index"
+  (testing "->index returns the index keyword when it can be parsed"
     (are [result input] (= result (sut/->index input))
       ::sut/north "north"
       ::sut/north :north
-      nil "unknown"
-      nil :unknown
-      nil nil)))
+      nil         "unknown"
+      nil         :unknown
+      nil         nil)))
 
 (deftest cleared?-test
   (testing "cleared?"
-    (testing "returns a truethy value when room is cleared"
+    (testing "returns a truethy value when room has 0 or 1 cards left"
       (are [room] (sut/cleared? room)
         {}
         {::sut/east :card}))
-    (testing "returns a falsey value when room is not cleared"
+    (testing "returns a falsey value when room has 2 or more cards left"
       (are [room] (-> room sut/cleared? not)
-        {::sut/east :card ::sut/west :card}
+        {::sut/east :card ::sut/south :card}
         {::sut/east :card ::sut/south :card ::sut/west :card}))))
 
-(def ^:private room
+(def ^:private ROOM
   {::sut/east :first-card})
 
-(def ^:private another-room
-  (assoc room ::sut/north :second-card ::sut/south :third-card
+(def ^:private ANOTHER-ROOM
+  (assoc ROOM ::sut/north :second-card ::sut/south :third-card
          ::sut/west :fourth-card))
 
-(def ^:private cards
+(def ^:private CARDS
   [:first-card])
 
-(def ^:private more-cards
+(def ^:private MORE-CARDS
   [:second-card :third-card :fourth-card])
 
 (deftest merge-test
@@ -43,11 +43,11 @@
       (is (nil? (sut/merge {} []))))
     (testing "merges the supplied cards into the room"
       (are [result room cards] (= result (sut/merge room cards))
-        room {} cards
-        (assoc room ::sut/north :second-card) {} (conj cards :second-card)
-        (assoc room ::sut/north :second-card) room [:second-card]
-        another-room room more-cards
-        another-room room (conj more-cards :fifth-card)))))
+        ROOM {} CARDS
+        (assoc ROOM ::sut/north :second-card) {} (conj CARDS :second-card)
+        (assoc ROOM ::sut/north :second-card) ROOM [:second-card]
+        ANOTHER-ROOM ROOM MORE-CARDS
+        ANOTHER-ROOM ROOM (conj MORE-CARDS :fifth-card)))))
 
 (deftest prepare-for-print-test
   (testing "prepare-for-print"

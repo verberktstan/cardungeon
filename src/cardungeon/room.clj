@@ -2,11 +2,20 @@
   (:refer-clojure :exclude [select merge])
   (:require [cardungeon.card :as card]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Private data
+
 (def ^:private INDICES #{::north ::east ::south ::west})
 
-(def index? INDICES)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Public data
 
 (def BASE {::cannot-skip? 1})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Public functions
+
+(def index? INDICES)
 
 (defn ->index [s]
   (when-let [idx (and s (keyword "cardungeon.room" (name s)))]
