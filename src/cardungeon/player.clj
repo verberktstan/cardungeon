@@ -1,7 +1,13 @@
 (ns cardungeon.player
   (:require [cardungeon.card :as card]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Public data
+
 (def BASE {::health 20 ::max-health 20})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Public functions
 
 (defn update-health
   "Updates player's health by applying args. Health is limited to 0 < max-health.
@@ -19,7 +25,7 @@
   "Returns the player with card equipped and previously equipped card discarded.
   Returns nil if the supplied card is not a weapon."
   [{::keys [equipped] :as player} card]
-  (when (or (card/weapon? card) (card/shield? card))
+  (when (card/equipable? card)
     (cond-> (assoc player ::equipped card)
       equipped (update :to-discard conj equipped))))
 
@@ -37,8 +43,10 @@
 ;; Regarding texts for printing
 
 (defn health-text [{::keys [health max-health]}]
-  (str "Health: " health "/" max-health))
+  (str "Health: " health (when max-health (str "/" max-health))))
 
 (defn equipped-text [{::keys [equipped last-slain]}]
-  (str (when equipped (str "Equipped: " (card/->str equipped)))
-       (when last-slain (str " - last slain: " (card/->str last-slain)))))
+  (str (when equipped
+         (str "Equipped: " (card/->str equipped)))
+       (when (and equipped last-slain)
+         (str " - last slain: " (card/->str last-slain)))))
