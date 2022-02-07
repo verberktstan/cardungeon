@@ -1,10 +1,19 @@
 (ns cardungeon.card
   (:refer-clojure :exclude [<]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Private data and functions
+
 (def ^:private TYPES #{:catapult :monster :potion :shield :shieldify :weapon})
 
 (defn- namespaced-keyword [x]
   (keyword "cardungeon.card" (name x)))
+
+(defn- make-check
+  "Returns a function that checks for a given key and returns the full map."
+  [s]
+  (fn check [card]
+    (and ((namespaced-keyword s) card) card)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public functions
@@ -18,24 +27,20 @@
     {:pre [(nat-int? value)]}
     {(namespaced-keyword type) value}))
 
-(defn- make-check
-  "Returns a function that checks for a given key and returns the full map."
-  [s]
-  (fn check* [card]
-    (and ((namespaced-keyword s) card) card)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions operating on a single card
 
-(def catapult? (make-check "catapult"))
-(def monster? (make-check "monster"))
-(def potion? (make-check "potion"))
-(def shield? (make-check "shield"))
+(def catapult?  (make-check "catapult"))
+(def monster?   (make-check "monster"))
+(def potion?    (make-check "potion"))
+(def shield?    (make-check "shield"))
 (def shieldify? (make-check "shieldify"))
-(def weapon? (make-check "weapon"))
+(def weapon?    (make-check "weapon"))
+
+(def equipable? (comp (partial some identity) (juxt shield? weapon?)))
 
 (defn value [{::keys [catapult monster potion shield shieldify weapon]}]
   (or catapult monster potion shield shieldify weapon))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Functions operating on a single card
 
 (defn ->str
   "Returns a human readable string representing the card.
@@ -43,12 +48,12 @@
   [card]
   (let [v (value card)]
     (cond
-      (catapult? card) (str "Catapult(" v ")")
-      (monster? card) (str "Monster(" v ")")
-      (potion? card) (str "Potion(" v ")")
-      (shield? card) (str "Shield(" v ")")
+      (catapult?  card) (str "Catapult(" v ")")
+      (monster?   card) (str "Monster(" v ")")
+      (potion?    card) (str "Potion(" v ")")
+      (shield?    card) (str "Shield(" v ")")
       (shieldify? card) (str "Shieldify!")
-      (weapon? card) (str "Weapon(" v ")"))))
+      (weapon?    card) (str "Weapon(" v ")"))))
 
 (defn damage
   "Returns monster card with damage dealt."
@@ -58,10 +63,10 @@
       monster (update ::monster - damage)
       monster (update ::monster (partial max 0)))))
 
-(def ^:private make-shield (make :shield))
-
-(defn shieldify [card]
-  (make-shield (value card)))
+(defn shieldify
+  "Returns a new shield card with the same value as the supplied card."
+  [card]
+  ((make :shield) (value card)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Collection functions

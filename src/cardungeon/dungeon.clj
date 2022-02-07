@@ -52,6 +52,7 @@
 (defn- equip
   "Returns the dungeon with card equipped and forget about the last slain monster."
   [dungeon card]
+  {:pre [(card/equipable? card)]}
   (some-> dungeon
           (player/equip card)
           player/forget-last-slain
