@@ -52,6 +52,7 @@
 (defn- equip
   "Returns the dungeon with card equipped and forget about the last slain monster."
   [dungeon card]
+  {:pre [(card/equipable? card)]}
   (some-> dungeon
           (player/equip card)
           player/forget-last-slain
@@ -130,7 +131,7 @@
   "Returns the game with dungeon-room card moved to dungeon-discarded, playing
   the room card on the fly"
   [dungeon room-idx]
-  (when-let [card (get dungeon room-idx)]
+  (when-let [card (get (room/select dungeon) room-idx)]
     (when-let [play* (play-fn dungeon card)]
       (some-> dungeon
         (room/remove-card room-idx)
@@ -163,9 +164,19 @@
   "Returns the dungeon with the current room returnd to the back of the draw
   pile. Returns nil when it's impossible to skip."
   [dungeon]
-  (let [room (room/select dungeon)]
-    (when (room/can-skip? dungeon)
-      (-> dungeon
-          room/forget
-          (update ::draw-pile concat (-> room vals shuffle))
-          room/mark-cannot-skip))))
+  (when (room/can-skip? dungeon)
+    (-> dungeon
+        room/forget
+        (update ::draw-pile concat (-> dungeon room/select vals shuffle))
+        room/mark-cannot-skip
+        (message/set "Skipping this dungeon room! Prepare for the next dungeon room.."))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Regarding texts for printing
+
+(defn prepare-for-print [dungeon]
+  (concat
+   [(player/health-text dungeon)
+    (player/equipped-text dungeon)
+    "---===::: Dungeon Room :::===---"]
+   (room/prepare-for-print dungeon)))

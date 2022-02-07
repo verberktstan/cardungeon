@@ -1,39 +1,26 @@
 (ns cardungeon.cli
   (:require [cardungeon.dungeon :as dungeon]
             [cardungeon.player :as player]
-            [cardungeon.card :as card]
             [cardungeon.room :as room]
             [cardungeon.message :as message]
             [clojure.string :as str]))
 
-(defn- print-welcome-msg! []
-  (newline)
-  (println "Welcome to Cardungeon!")
-  (println "type 'exit' to stop the game.")
-  (newline)
-  (println "You have to survive a creepy dungeon. You'll enter rooms with 4 cards.")
-  (println "type 'east', 'north', 'south' or 'west' to play the corresponding card.")
-  (println "Monsters will fight you, and you'll lose health.")
-  (println "If you select a weapon, you'll equip it and damage the monsters you fight.")
-  (println "Potions will heal you.")
-  (println "If you select a catapult, a random monster will take some damage.")
-  (println "Shields can be equipped like weapons, monsters will harm you less if you carry one.")
-  (println "If you select a shieldify, a random card will transform into a shield!")
-  (newline)
-  (println "type 'skip' to skip the current room."))
+(def ^:private WELCOME
+  [""
+   "Welcome to Cardungeon!"
+   "type 'help' for instructions."
+   "type 'exit' to stop the game."
+   "type 'skip' to skip the current room."])
 
-(defn- print-dungeon! [{::player/keys [equipped health last-slain max-health] :as dungeon}]
-  (newline)
-  (println "Health:" (str health "/" max-health))
-  (when equipped
-    (println
-     "Equipped:"
-     (card/->str equipped)
-     (if last-slain
-       (str "(last slain: " (card/->str last-slain) ")")
-       "")))
-  (println "---===::: Dungeon Room :::===---")
-  (run! (partial apply println) (room/prepare-for-print dungeon)))
+(def ^:private INSTRUCTIONS
+  ["You have to survive a creepy dungeon. You'll enter rooms with 4 cards."
+   "type 'east', 'north', 'south' or 'west' to play the corresponding card."
+   "Monsters will fight you, and you'll lose health."
+   "If you select a weapon, you'll equip it and damage the monsters you fight."
+   "Potions will heal you."
+   "If you select a catapult, a random monster will take some damage."
+   "Shields can be equipped like weapons, monsters will harm you less if you carry one."
+   "If you select a shieldify, a random card will transform into a shield!"])
 
 (defn- parse-cmd
   "Parses input string into a map with a command and a value.
@@ -41,9 +28,10 @@
   [s]
   (when s
     (let [lcs (-> s str/trim str/lower-case)
-          room-idx (room/->index s)]
+          room-idx (room/->index lcs)]
       (cond
         (#{"exit"} lcs) {:exit? true}
+        (#{"help"} lcs) {:help? true}
         (#{"skip"} lcs) {:skip? true}
         room-idx {:room-idx room-idx}))))
 
@@ -51,34 +39,40 @@
   (cond-> dungeon
     (and (room/cleared? dungeon) (dungeon/deal dungeon)) dungeon/deal))
 
-(defn -main [& _]
-  (print-welcome-msg!)
-  (loop [dungeon (doto (dungeon/new-game) print-dungeon!)
-         input (read-line)]
-    (let [{:keys [exit? room-idx skip?] :as cmd} (parse-cmd input)
+(defn- info-text
+  "Returns info, if cmd or skip didn't workout, or the message after a turn."
+  [{:keys [cmd message skip? skipped]}]
+  (cond
+    (not cmd) "Can't do that!"
+    (and skip? (not skipped)) "Can't skip this room!"
+    message message))
+
+(defn- get-slay-input! [slayed]
+  (when slayed
+    (println "Type 'y' to use your weapon to slay..")
+    (-> (read-line) str/lower-case #{"y"})))
+
+(defn -main [_]
+  (run! println WELCOME)
+  (loop [dungeon (dungeon/new-game)]
+    (newline)
+    (run! println (dungeon/prepare-for-print dungeon))
+    (let [{:keys [exit? help? room-idx skip?] :as cmd} (-> (read-line) parse-cmd)
           skipped (and skip? (dungeon/skip-room dungeon))
-          slayed (and room-idx (dungeon/play (assoc dungeon :slay? true) room-idx))
-          slay? (when slayed
-                  (println "Use your weapon to slay? Type 'y'.")
-                  (-> (read-line) str/lower-case #{"y"}))
-          played (and room-idx (dungeon/play dungeon room-idx))
+          slayed (dungeon/play (assoc dungeon :slay? true) room-idx)
+          slay? (get-slay-input! slayed)
+          played (dungeon/play dungeon room-idx)
           new-dungeon (post-turn-fn (or skipped (when slay? slayed) played dungeon))]
-      (when-not cmd
-        (println "Can't do that! Please type 'exit', 'skip' or a room card number."))
-      (when (and skip? (not skipped))
-        (println "Can't skip this room!"))
-      (when skipped
-        (println "Skipping this dungeon room! Prepare for the next dungeon room.."))
-      (when (and room-idx (and (not slayed) (not played)))
-        (println "Can't play this!"))
-      (when-let [message (and new-dungeon (:message new-dungeon))]
-        (println message))
+      (some-> {:cmd cmd
+               :message (message/get new-dungeon)
+               :skip? skip?
+               :skipped skipped}
+              info-text
+              println)
+      (when help?
+        (run! println INSTRUCTIONS))
       (cond
         exit? (println "Stopping game..")
         (player/dead? new-dungeon) (println "You didn't survide the dungeon!")
         (dungeon/finished? new-dungeon) (println "You cleared the dungeon!")
-        :else (recur
-               (-> new-dungeon
-                   message/forget
-                   (doto print-dungeon!))
-               (read-line))))))
+        :else (recur (message/forget new-dungeon))))))

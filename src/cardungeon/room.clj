@@ -2,11 +2,20 @@
   (:refer-clojure :exclude [select merge])
   (:require [cardungeon.card :as card]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Private data
+
 (def ^:private INDICES #{::north ::east ::south ::west})
 
-(def index? INDICES)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Public data
 
 (def BASE {::cannot-skip? 1})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Public functions
+
+(def index? INDICES)
 
 (defn ->index [s]
   (when-let [idx (and s (keyword "cardungeon.room" (name s)))]
@@ -58,7 +67,8 @@
   (->> (select room)
        (sort-by key)
        (map (juxt (comp name key) (comp card/->str val)))
-       (map (partial interpose ":"))))
+       (map (partial interpose ": "))
+       (map (partial apply str))))
 
 (defn random-entry
   "Returns a random map-entry of one of the room cards, filtering by optionally
